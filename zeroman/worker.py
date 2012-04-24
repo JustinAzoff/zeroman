@@ -13,6 +13,7 @@ class worker:
     def __init__(self, servers, timeout=TIMEOUT, server_dead_time=SERVER_DEAD_TIME):
         self.context = zmq.Context()
         self.sockets = {}
+        self.dead = set()
         self.last_heartbeats={}
         self.functions = {}
 
@@ -66,9 +67,15 @@ class worker:
     def reconnect_if_needed(self):
         for h, s in self.sockets.items():
             if time.time() -  self.last_heartbeats.get(s, 0) > self.server_dead_time:
-                logger.error("%r is dead", h)
-                self.close(h)
-                self.register(h)
+                if h not in self.dead:
+                    logger.error("%r is dead", h)
+                    self.dead.add(h)
+                    self.close(h)
+                    self.register(h)
+            elif h in self.dead:
+                logger.info("%r is alive", h)
+                self.dead.remove(h)
+                    
         
 
     def handle(self, s, msg):
