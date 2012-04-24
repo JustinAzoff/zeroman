@@ -3,6 +3,9 @@ import time
 import zmq
 import random
 
+import logging
+logger = logging.getLogger(__name__)
+
 TIMEOUT = 5000
 SERVER_DEAD_TIME = 10
 
@@ -38,9 +41,9 @@ class worker:
         socks = dict(poll.poll(self.TIMEOUT))
         if socks.get(s) == zmq.POLLIN:
             reply = s.recv()
-            print 'got reply from', h
+            logger.debug('got reply from %r', h)
         else:
-            print 'no reply from', h
+            logger.error('no reply from %r', h)
             reply = None
             s.setsockopt(zmq.LINGER, 0)
             s.close()
@@ -63,7 +66,7 @@ class worker:
     def reconnect_if_needed(self):
         for h, s in self.sockets.items():
             if time.time() -  self.last_heartbeats.get(s, 0) > self.server_dead_time:
-                print h, 'is dead'
+                logger.error("%r is dead", h)
                 self.close(h)
                 self.register(h)
         
@@ -77,7 +80,7 @@ class worker:
             return "eh?"
 
     def handle_heartbeat(self, s):
-        print 'heartbeat from', s
+        logger.debug("heartbeat from %r", s)
         self.last_heartbeats[s] = time.time()
         s.send_multipart(["alive"])
 
@@ -85,6 +88,12 @@ class worker:
         f = self.functions.get(func)
         ret = f(msg)
         s.send_multipart(['ret', client, func, ret])
+
+    def handle_do(self, s, func, msg):
+        f = self.functions.get(func)
+        f(msg)
+        #FIXME What socket type do I need to change to to make this not needed?
+        s.send_multipart(["alive"])
 
     def run(self):
         for h in self.servers:

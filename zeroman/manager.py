@@ -3,6 +3,8 @@ import time
 import zmq
 import random
 from collections import defaultdict
+import logging
+logger = logging.getLogger(__name__)
 
 class worker:
     def __init__(self, id, handlers):
@@ -35,7 +37,7 @@ class manager:
         self.workers_by_id[id] = w
         for h in handlers:
             self.workers_by_handler[h].append(w)
-        print "%r is a worker %s" % (w, handlers)
+        logger.info("%r is a worker %s", w, handlers)
         self.send_heartbeat(w)
 
         for h in handlers:
@@ -47,7 +49,7 @@ class manager:
     def handle_alive(self, id, *args):
         w = self.workers_by_id[id]
         w.last_checkin = time.time()
-        print w, 'is alive'
+        logger.debug("%r is alive", w)
 
     def handle_call(self, id, func, data):
         workers = self.workers_by_handler[func]
@@ -56,6 +58,12 @@ class manager:
             self.s.send_multipart([worker.id, '', 'call', id, func, data])
         else:
             self.work_queue[func].append((id, data))
+
+    def handle_broadcast(self, id, func, data):
+        workers = self.workers_by_handler[func]
+        for w in workers:
+            self.s.send_multipart([w.id, '', 'do', func, data])
+        self.s.send_multipart([id, '', "ok"])
 
 
     def handle_ret(self, id, client, func, response):
@@ -80,7 +88,7 @@ class manager:
     def check_for_dead(self):
         for w in self.workers:
             if time.time() - w.last_checkin > self.HEARTBEAT_INTERVAL * 2:
-                print w, 'is dead'
+                logger.error("%r is dead", w)
                 self.cleanup(w)
 
     def cleanup(self, w):

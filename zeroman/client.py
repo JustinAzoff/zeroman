@@ -3,6 +3,9 @@ import time
 import zmq
 import random
 
+import logging
+logger = logging.getLogger(__name__)
+
 TIMEOUT = 1000
 SERVER_DEAD_TIME = 5
 class client:
@@ -35,9 +38,9 @@ class client:
         socks = dict(poll.poll(self.timeout))
         if socks.get(s) == zmq.POLLIN:
             reply = s.recv()
-            print 'got reply from', h
+            logger.debug('got reply from %r', h)
         else:
-            print 'no reply from', h
+            logger.error('no reply from %r', h)
             reply = None
             s.setsockopt(zmq.LINGER, 0)
             s.close()
@@ -67,3 +70,6 @@ class client:
 
     def call(self, func, data):
         return self.do_req(["call", func, data])
+
+    def broadcast(self, func, data):
+        return self.do_req(["broadcast", func, data])
