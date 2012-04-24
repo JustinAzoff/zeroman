@@ -104,13 +104,3 @@ class worker:
             
     def register_handler(self, name, func):
         self.functions[name] = func
-
-if __name__ == "__main__":
-
-    def hello(data):
-        print 'returning', data.upper()
-        return data.upper()
-
-    w = worker()
-    w.register_handler('hello', hello)
-    w.run()
