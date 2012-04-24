@@ -6,7 +6,7 @@ import random
 TIMEOUT = 1000
 SERVER_DEAD_TIME = 5
 class client:
-    def __init__(self, servers, timeout=TIMEOUT, server_dead_time=HOST_DEAD_TIME):
+    def __init__(self, servers, timeout=TIMEOUT, server_dead_time=SERVER_DEAD_TIME):
         self.context = zmq.Context()
         self.sockets = {}
         self.dead = {}
@@ -67,8 +67,3 @@ class client:
 
     def call(self, func, data):
         return self.do_req(["call", func, data])
-
-if __name__ == "__main__":
-    c=client()
-    for x in range(1000):
-        print c.call("hello", "world %d" % x)
