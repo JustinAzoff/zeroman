@@ -3,16 +3,17 @@ import time
 import zmq
 import random
 
-
+TIMEOUT = 1000
+SERVER_DEAD_TIME = 5
 class client:
-    hosts = ["tcp://localhost:5555", "tcp://localhost:5556"]
-    TIMEOUT = 1000
-    HOST_DEAD_TIME = 5
-
-    def __init__(self):
+    def __init__(self, servers, timeout=TIMEOUT, server_dead_time=HOST_DEAD_TIME):
         self.context = zmq.Context()
         self.sockets = {}
         self.dead = {}
+
+        self.servers = servers
+        self.timeout = timeout
+        self.server_dead_time = server_dead_time
 
     def get_socket(self, h):
         s = self.sockets.get(h)
@@ -31,7 +32,7 @@ class client:
 
         poll = zmq.Poller()
         poll.register(s, zmq.POLLIN)
-        socks = dict(poll.poll(self.TIMEOUT))
+        socks = dict(poll.poll(self.timeout))
         if socks.get(s) == zmq.POLLIN:
             reply = s.recv()
             print 'got reply from', h
@@ -46,20 +47,20 @@ class client:
 
         return reply
 
-    def alive_hosts(self):
-        for h in self.hosts:
+    def alive_servers(self):
+        for h in self.servers:
             if h in self.dead:
-                if time.time() - self.dead[h] > self.HOST_DEAD_TIME:
+                if time.time() - self.dead[h] > self.server_dead_time:
                     del self.dead[h]
                     yield h
             else:
                 yield h
 
     def do_req(self, r):
-        random.shuffle(self.hosts)
-        if len(self.dead) == len(self.hosts):
+        random.shuffle(self.servers)
+        if len(self.dead) == len(self.servers):
             self.dead = {}
-        for h in self.alive_hosts():
+        for h in self.alive_servers():
             resp = self.do_host(h, r)
             if resp:
                 return resp
@@ -67,9 +68,7 @@ class client:
     def call(self, func, data):
         return self.do_req(["call", func, data])
 
-    def run(self):
-        for x in range(1000):
-            print self.call("hello", "world %d" % x)
-
 if __name__ == "__main__":
-    client().run()
+    c=client()
+    for x in range(1000):
+        print c.call("hello", "world %d" % x)

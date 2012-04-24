@@ -105,7 +105,7 @@ class manager:
             self.send_heartbeats()
             self.check_for_dead()
 
-if __name__ == "__main__":
+def main():
     import sys
     port = sys.argv[1]
     manager(port).run()

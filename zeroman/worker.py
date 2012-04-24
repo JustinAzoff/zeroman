@@ -3,17 +3,20 @@ import time
 import zmq
 import random
 
+TIMEOUT = 5000
+SERVER_DEAD_TIME = 10
 
 class worker:
-    hosts = ["tcp://localhost:5555", "tcp://localhost:5556"]
-    TIMEOUT = 5000
-    MANAGER_DEAD_TIME = 10
-
-    def __init__(self):
+    def __init__(self, servers, timeout=TIMEOUT, server_dead_time=SERVER_DEAD_TIME):
         self.context = zmq.Context()
         self.sockets = {}
         self.last_heartbeats={}
         self.functions = {}
+
+        self.servers = servers
+        self.timeout = timeout
+        self.server_dead_time = server_dead_time
+
 
     def get_socket(self, h):
         s = self.sockets.get(h)
@@ -59,7 +62,7 @@ class worker:
 
     def reconnect_if_needed(self):
         for h, s in self.sockets.items():
-            if time.time() -  self.last_heartbeats.get(s, 0) > self.MANAGER_DEAD_TIME:
+            if time.time() -  self.last_heartbeats.get(s, 0) > self.server_dead_time:
                 print h, 'is dead'
                 self.close(h)
                 self.register(h)
@@ -84,7 +87,7 @@ class worker:
         s.send_multipart(['ret', client, func, ret])
 
     def run(self):
-        for h in self.hosts:
+        for h in self.servers:
             self.register(h)
         
         time.sleep(1)
@@ -92,7 +95,7 @@ class worker:
             poll = zmq.Poller()
             for s in self.sockets.values():
                 poll.register(s, zmq.POLLIN)
-            socks = dict(poll.poll(self.TIMEOUT))
+            socks = dict(poll.poll(self.timeout))
             for s in socks:
                 msg = s.recv_multipart()
                 self.handle(s, msg)
