@@ -7,10 +7,12 @@ setup(name="zeroman",
     packages=find_packages(exclude=['ez_setup', 'examples', 'tests']),
     zip_safe=False,
     install_requires=[
-        "zmq",
+        "pyzmq",
     ],
     entry_points = {
-        "zeromanager    =   zeroman.manager:main",
+        'console_scripts': [
+            "zeromanager    =   zeroman.manager:main",
+        ],
     },
     test_suite='nose.collector',
 )
