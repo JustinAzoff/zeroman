@@ -71,5 +71,8 @@ class client:
     def call(self, func, data):
         return self.do_req(["call", func, data])
 
+    def background(self, func, data):
+        return self.do_req(["background", func, data])
+
     def broadcast(self, func, data):
         return self.do_req(["broadcast", func, data])

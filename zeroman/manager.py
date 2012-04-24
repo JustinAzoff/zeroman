@@ -14,7 +14,7 @@ class worker:
         self.last_heartbeat = 0
 
 class manager:
-    HEARTBEAT_INTERVAL = 5
+    HEARTBEAT_INTERVAL = 2
     def __init__(self, port):
         context = zmq.Context()
         s = context.socket(zmq.ROUTER)
@@ -42,8 +42,8 @@ class manager:
 
         for h in handlers:
             if self.work_queue[h]:
-                client_id, data = self.work_queue[h].pop(0)
-                self.s.send_multipart([id, '', 'call', client_id, h, data])
+                client_id, type, data = self.work_queue[h].pop(0)
+                self.s.send_multipart([id, '', type, client_id, h, data])
 
 
     def handle_alive(self, id, *args):
@@ -57,12 +57,21 @@ class manager:
             worker = workers.pop(0)
             self.s.send_multipart([worker.id, '', 'call', id, func, data])
         else:
-            self.work_queue[func].append((id, data))
+            self.work_queue[func].append((id, 'call', data))
+
+    def handle_background(self, id, func, data):
+        workers = self.workers_by_handler[func]
+        if workers:
+            worker = workers.pop(0)
+            self.s.send_multipart([worker.id, '', 'do', id, func, data])
+        else:
+            self.work_queue[func].append((id, 'do', data))
+        self.s.send_multipart([id, '', "ok"])
 
     def handle_broadcast(self, id, func, data):
         workers = self.workers_by_handler[func]
         for w in workers:
-            self.s.send_multipart([w.id, '', 'do', func, data])
+            self.s.send_multipart([w.id, '', 'do', id, func, data])
         self.s.send_multipart([id, '', "ok"])
 
 
@@ -70,8 +79,8 @@ class manager:
         self.s.send_multipart([client, '', response])
 
         if self.work_queue[func]:
-            client_id, data = self.work_queue[func].pop(0)
-            self.s.send_multipart([id, '', 'call', client_id, func, data])
+            client_id, type, data = self.work_queue[func].pop(0)
+            self.s.send_multipart([id, '', type, client_id, func, data])
         else:
             self.workers_by_handler[func].append(self.workers_by_id[id])
             

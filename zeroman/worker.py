@@ -7,7 +7,7 @@ import logging
 logger = logging.getLogger(__name__)
 
 TIMEOUT = 5000
-SERVER_DEAD_TIME = 10
+SERVER_DEAD_TIME = 5
 
 class worker:
     def __init__(self, servers, timeout=TIMEOUT, server_dead_time=SERVER_DEAD_TIME):
@@ -96,7 +96,7 @@ class worker:
         ret = f(msg)
         s.send_multipart(['ret', client, func, ret])
 
-    def handle_do(self, s, func, msg):
+    def handle_do(self, s, client, func, msg):
         f = self.functions.get(func)
         f(msg)
         #FIXME What socket type do I need to change to to make this not needed?
