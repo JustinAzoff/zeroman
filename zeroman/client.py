@@ -7,7 +7,7 @@ import logging
 logger = logging.getLogger(__name__)
 
 TIMEOUT = 1000
-SERVER_DEAD_TIME = 5
+SERVER_DEAD_TIME = 30
 class client:
     def __init__(self, servers, timeout=TIMEOUT, server_dead_time=SERVER_DEAD_TIME):
         self.context = zmq.Context()
