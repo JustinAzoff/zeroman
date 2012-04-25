@@ -77,12 +77,16 @@ class manager:
 
     def handle_ret(self, id, client, func, response):
         self.s.send_multipart([client, '', response])
+        self.handle_worker_ready(id, func)
 
-        if self.work_queue[func]:
-            client_id, type, data = self.work_queue[func].pop(0)
-            self.s.send_multipart([id, '', type, client_id, func, data])
-        else:
-            self.workers_by_handler[func].append(self.workers_by_id[id])
+    def handle_worker_ready(self, id, func):
+        w = self.workers_by_id[id]
+        for f in w.handlers:
+            if self.work_queue[f]:
+                client_id, type, data = self.work_queue[f].pop(0)
+                self.s.send_multipart([id, '', type, client_id, f, data])
+            elif f == func:
+                self.workers_by_handler[func].append(w)
             
 
     def send_heartbeat(self, w):

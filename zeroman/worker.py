@@ -99,8 +99,7 @@ class worker:
     def handle_do(self, s, client, func, msg):
         f = self.functions.get(func)
         f(msg)
-        #FIXME What socket type do I need to change to to make this not needed?
-        s.send_multipart(["alive"])
+        s.send_multipart(["worker_ready", "func"])
 
     def run(self):
         for h in self.servers:
