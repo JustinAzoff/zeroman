@@ -71,7 +71,7 @@ class manager:
     def handle_broadcast(self, id, func, data):
         workers = self.workers_by_handler[func]
         for w in workers:
-            self.s.send_multipart([w.id, '', 'do', id, func, data])
+            self.s.send_multipart([w.id, '', 'bc', id, func, data])
         self.s.send_multipart([id, '', "ok"])
 
 

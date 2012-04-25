@@ -101,6 +101,12 @@ class worker:
         f(msg)
         s.send_multipart(["worker_ready", func])
 
+    def handle_bc(self, s, client, func, msg):
+        f = self.functions.get(func)
+        f(msg)
+        #FIXME: make it so this is not needed
+        s.send_multipart(["alive"])
+
     def run(self):
         for h in self.servers:
             self.register(h)
