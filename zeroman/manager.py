@@ -81,12 +81,15 @@ class manager:
 
     def handle_worker_ready(self, id, func):
         w = self.workers_by_id[id]
+        resent = False
         for f in w.handlers:
             if self.work_queue[f]:
                 client_id, type, data = self.work_queue[f].pop(0)
                 self.s.send_multipart([id, '', type, client_id, f, data])
-            elif f == func:
-                self.workers_by_handler[func].append(w)
+                if f == func:
+                    resent = True
+        if not resent:
+            self.workers_by_handler[func].append(w)
             
 
     def send_heartbeat(self, w):

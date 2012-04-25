@@ -99,7 +99,7 @@ class worker:
     def handle_do(self, s, client, func, msg):
         f = self.functions.get(func)
         f(msg)
-        s.send_multipart(["worker_ready", "func"])
+        s.send_multipart(["worker_ready", func])
 
     def run(self):
         for h in self.servers:
